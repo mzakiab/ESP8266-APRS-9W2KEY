@@ -1,5 +1,5 @@
 # ESP8266-APRS-9W2KEY
-APRS melalui TCPIP, menggunakan ESP8266 Node MCU
+APRS melalui TCPIP, menggunakan ESP8266 Node MCU. Maklumat yang lebih lanjut ada di <a href="9w2key.blogspot.com">9w2key.blogspot.com</a>
 
 Antara bahan-bahan yang diperlukan adalah:-
 1. ESP8266
