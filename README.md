@@ -26,3 +26,11 @@ Cara sambung / Litar:
   <br>
   <img src ="6088909573323426934.jpg"
 </p>
+
+<p>
+<b>
+  Support my project
+</b>
+  <br>
+  <img src = "QRCode.jpg">
+  </p>
