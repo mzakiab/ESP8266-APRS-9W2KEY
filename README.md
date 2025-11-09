@@ -12,7 +12,17 @@ Antara bahan-bahan yang diperlukan adalah:-
 8. Bread Board
 9. Jumper wire
 
-Sacara sambungan:
+Cara sambung / Litar:
 <p>
 <img src = "Screenshot from 2025-11-09 12-13-24.png">
+</p>
+<p>
+  Contoh selepas sambung-sambung
+  <br>
+  <img src ="6088909573323426936.jpg"
+</p>
+<p>
+  Contoh yang diperolehi dari aprs.fi
+  <br>
+  <img src ="6088909573323426934.jpg"
 </p>
