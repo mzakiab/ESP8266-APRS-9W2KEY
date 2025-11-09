@@ -75,7 +75,7 @@ bool connectAPRS(const char* server, uint16_t port) {
 bool sendAPRSMessage(const char* message) {
   if (aprsConnected && tcpClient.connected()) {
     tcpClient.print(callsign); 
-    tcpClient.print(">APKEY3,TCPIP*:");       // Device ATMega328P APRS Tracker bye 9W2KEY
+    tcpClient.print(">APKEY3,TCPIP*:");       // Device ATMega328P APRS Tracker by 9W2KEY
     tcpClient.print(message); 
     tcpClient.print("\r\n"); 
     return true;
@@ -111,7 +111,7 @@ void sendAPRSBeacon() {
   // Format: !DDMM.mmN\DDDMM.mmOCCC/SSSKomen.
   // tukar askara di tengah %sO%0 untuk tukar simbol.
   // Askara O dlm tu adalah untuk simbol Roket. 
-  sprintf(buffer, "!%s\\%sO%03d/%03d Experiment ESP8266 APRS by 9W2KEY", lat_buf, lon_buf, course_deg, speed_knots); 
+  sprintf(buffer, "!%s\\%sO%03d/%03d Experiment ESP8266 APRS by 9W2KEY | 9w2key.blogspot.com |", lat_buf, lon_buf, course_deg, speed_knots); 
 
 
   Serial.print("Menghantar beacon APRS: "); 
