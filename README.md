@@ -32,5 +32,5 @@ Cara sambung / Litar:
   Support my project
 </b>
   <br>
-  <img src = "QRCode.jpg">
+  <img src = "QRCode.jpg" alt="Support My Project" style="width: 50%; height: 50%;">
   </p>
