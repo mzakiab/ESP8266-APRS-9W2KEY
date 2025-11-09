@@ -12,7 +12,6 @@ Antara bahan-bahan yang diperlukan adalah:-
 8. Bread Board
 9. Jumper wire
 
-
-
 Sacara sambungan:
+<img src = "Screenshot from 2025-11-09 12-13-24.png">
 
