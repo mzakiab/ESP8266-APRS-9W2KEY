@@ -13,5 +13,6 @@ Antara bahan-bahan yang diperlukan adalah:-
 9. Jumper wire
 
 Sacara sambungan:
+<p>
 <img src = "Screenshot from 2025-11-09 12-13-24.png">
-
+</p>
