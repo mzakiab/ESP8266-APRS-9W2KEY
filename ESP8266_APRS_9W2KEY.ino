@@ -43,7 +43,7 @@ int buzzer         =    0;      // Pin untuk buzzer D3
 // --- Pengaturan Waktu Beacon SmartBeaconing ---
 const unsigned long BEACON_FAST_INTERVAL = 8000;      // 8 saat (ketika bergerak)
 const unsigned long BEACON_SLOW_INTERVAL = 1800000;   // 30 minit (ketika tidak bergerak)
-const float LOW_SPEED_THRESHOLD_KNOTS = 1.0;          // Di bawah ini dianggap "tidak bergerak"
+const float LOW_SPEED_THRESHOLD_KNOTS = 3.0;          // Di bawah ini dianggap "tidak bergerak"
 const float TURN_ANGLE_THRESHOLD_DEG = 25.0;          // Sudut konar leper minimum untuk triger beacon (25 darjah)
 
 unsigned long lastBeaconTime = 0;
