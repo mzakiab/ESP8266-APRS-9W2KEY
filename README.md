@@ -11,6 +11,7 @@ Antara bahan-bahan yang diperlukan adalah:-
 7. Kapasitor 0.1uF
 8. Bread Board
 9. Jumper wire
+10. Buzzer
 
 Cara sambung / Litar:
 <p>
