@@ -1,19 +1,20 @@
-/*********************************************** 
+/************************************************ 
     ESP8266 APRS - (SmartBeaconing) by: 9W2KEY
                9w2key.blogspot.com
-************************************************/
+*************************************************/
 
 #include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>           // Kutub kanah untuk multiple WiFi
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <WiFiClient.h>
 
 // --- Konfigurasi WiFi ---
-const char* ssid = "xxxxxxxxxxxx";            // Masukkan SSID Wifi anda
-const char* password = "xxxxxxxx";            // Masukkan password Wifi
+// Menggunakan WiFiMulti untuk menguruskan berbilang rangkaian
+ESP8266WiFiMulti wifiMulti; 
 
 // --- Konfigurasi APRS ---
-const char* callsign = "XXXXXXXXX";           // Ganti dengan callsign Anda
+const char* callsign = "xxxxxxxxx";           // Ganti dengan callsign Anda
 const char* passcode = "xxxxx";               // Ganti dengan passcode APRS-IS Anda
 const char* aprs_server = "asia.aprs2.net";   // Server APRS-IS 
 const uint16_t aprs_port = 14580;             // Port untuk APRS
@@ -33,17 +34,23 @@ TinyGPSPlus gps;
 SoftwareSerial ss(RXPin, TXPin);              // RX, TX
 
 // --- Konfigurasi LED ---
-const int scanWiFi =   15;      // LED Kuning - D8
-const int wiFiON   =   13;      // LED Hijau - D7
-const int TXBeacon =    2;      // LED Merah - D4
+//const int scanGPS  =  1;  // LED 
+//const int adaGPS   =  2;  // LED 
+const int scanWiFi =   15;  // LED Kuning - D8
+const int wiFiON   =   13;  // LED Hijau - D7
+const int TXBeacon =    2;  // LED Merah - D4
 
 // ---- Konfigurasi Buzzer ----
-int buzzer         =    0;      // Pin untuk buzzer D3
+int buzzer          =    0;     // Pin untuk buzzer D3
+int toneTX          =   4000;   // Tone TX
+int toneKoner       =   3000;   // Tone Koner Leper
+int toneISerr       =   50;     // Tone server terputus
 
 // --- Pengaturan Waktu Beacon SmartBeaconing ---
 const unsigned long BEACON_FAST_INTERVAL = 8000;      // 8 saat (ketika bergerak)
 const unsigned long BEACON_SLOW_INTERVAL = 1800000;   // 30 minit (ketika tidak bergerak)
-const float LOW_SPEED_THRESHOLD_KNOTS = 3.0;          // Di bawah ini dianggap "tidak bergerak"
+// const unsigned long BEACON_SLOW_INTERVAL = 10000;  // 10 saat, untuk testing system 
+const float LOW_SPEED_THRESHOLD_KNOTS = 3.0;          // Di bawah nilai ini dianggap "tidak bergerak"
 const float TURN_ANGLE_THRESHOLD_DEG = 25.0;          // Sudut konar leper minimum untuk triger beacon (25 darjah)
 
 unsigned long lastBeaconTime = 0;
@@ -64,7 +71,7 @@ bool connectAPRS(const char* server, uint16_t port) {
     loginStr += callsign; 
     loginStr += " pass ";
     loginStr += passcode; 
-    loginStr += " vers 9W2KEY-ESP8266_APRS 1.0\r\n";
+    loginStr += " vers 9W2KEY-ESP8266_APRS 2.0\r\n";
     tcpClient.print(loginStr); 
     aprsConnected = true; 
     return true;
@@ -86,7 +93,8 @@ bool sendAPRSMessage(const char* message) {
 void sendAPRSBeacon() {
   // Format paket APRS: 9W2KEY-12>APKEY3,TCPIP*:@ddmmyyhhmmzLat Long SSS/CRS Comment
   
-  char buffer[100]; 
+  // char buffer[100];
+  char buffer[120];
 
   // Format koordinat lintang (latitude) APRS
   char lat_buf[12];
@@ -106,13 +114,15 @@ void sendAPRSBeacon() {
   // Kederasan dalam knot (SSS), Arah dalam darjah (CRS)
   int speed_knots = (int)(gps.speed.knots()); // Kederasan dalam knot
   int course_deg = (int)(gps.course.deg());   // Arah dalam darjah
+
+  // Format altitude dalam meter
+  int altitude_meters = (int)(gps.altitude.meters());
   
   // Membuat string paket APRS. '!' digunakan untuk posisi tanpa time-stamping.
   // Format: !DDMM.mmN\DDDMM.mmOCCC/SSSKomen.
   // tukar askara di tengah %sO%0 untuk tukar simbol.
   // Askara O dlm tu adalah untuk simbol Roket. 
-  sprintf(buffer, "!%s\\%sO%03d/%03d Experiment ESP8266 APRS by 9W2KEY | 9w2key.blogspot.com |", lat_buf, lon_buf, course_deg, speed_knots); 
-
+  sprintf(buffer, "!%s\\%sO%03d/%03d/A=%06d Experiment GPS + ESP8266 APRS | 9w2key.blogspot.com |", lat_buf, lon_buf, course_deg, speed_knots, altitude_meters);
 
   Serial.print("Menghantar beacon APRS: "); 
   Serial.println(buffer); 
@@ -123,7 +133,7 @@ void sendAPRSBeacon() {
       digitalWrite(TXBeacon, HIGH);
       delay(200);
       digitalWrite(TXBeacon, LOW);
-      tone(buzzer, 1100); 
+      tone(buzzer, toneTX); 
       delay(50);
       digitalWrite(TXBeacon, HIGH);
       noTone(buzzer);
@@ -152,8 +162,19 @@ void setup() {
   Serial.begin(115200);
   ss.begin(GPSBaud);                  // Memula komunikasi serial dengan GPS
   Serial.println("\nScan WiFi..."); 
-  WiFi.begin(ssid, password); 
-  while (WiFi.status() != WL_CONNECTED) { 
+
+  // --- Konfigurasi WiFiMulti ---
+  WiFi.mode(WIFI_STA);                                          // Tetapkan mod kepada Station
+  wifiMulti.addAP("wifi1_SSID", "wifi1_Password");              // Hok spok talipong 1
+  wifiMulti.addAP("wifi2_SSID", "wifi2_Password");              // Wifi rumah 1
+  wifiMulti.addAP("wifi3_SSID", "wifi3_Password");              // Wifi rumah 2
+  wifiMulti.addAP("wifi4_SSID", "wifi4_Password");              // Hok spok talipong 2
+  // Tambah lagi rangkaian lain di bawah ni jika ada:
+  // wifiMulti.addAP("SSID BARU", "PASSWORD BARU");             // Tambah Rangkaian 5
+
+  // --- Logik Sambungan WiFi Baharu ---
+  Serial.println("Menyambung ke mana-mana rangkaian WiFi yang ada...");
+  while (wifiMulti.run() != WL_CONNECTED) { 
     delay(500); 
     Serial.print(".");
     digitalWrite(scanWiFi, HIGH);
@@ -164,6 +185,8 @@ void setup() {
   }
 
   Serial.println("\nWiFi bersambung."); 
+  Serial.print("Bersambung ke SSID: ");
+  Serial.println(WiFi.SSID());              // Tunjukkan SSID mana yang berjaya disambung
   Serial.print("Alamat IP: ");
   Serial.println(WiFi.localIP()); 
 
@@ -191,18 +214,54 @@ void loop() {
     }
   }
 
+  // --- Pengurusan Sambungan WiFi dan APRS-IS (Penting) ---
+  // Fungsi wifiMulti.run() perlu sentiasa dipanggil dalam loop()
+  // untuk memastikan ia menguruskan sambungan semula WiFi secara automatik.
+  if (wifiMulti.run() == WL_CONNECTED) {
+    digitalWrite(wiFiON, HIGH);
+    digitalWrite(scanWiFi, LOW);
+
+
   // Untuk make sure konet seng ke APRS-IS tidak putus.
   // Kalu putus, dia akan try cuba sambung lagi dan lagi sampai mung tutup
   if (!tcpClient.connected()) {
     aprsConnected = false; 
     Serial.println("Sambungan ke APRS-IS terputus, mencuba untuk sambungkan lagi...");
-    digitalWrite(wiFiON, HIGH);
-    delay(30);
-    digitalWrite(wiFiON, LOW); 
+    digitalWrite(wiFiON, LOW);
+    digitalWrite(scanWiFi, HIGH);
+    tone(buzzer, toneISerr);
+    delay(100);
+    digitalWrite(scanWiFi, LOW);
+    delay(50);
+    noTone(buzzer);
+    delay(100);
+    tone(buzzer, toneISerr);
+    delay(50);
+    noTone(buzzer);
+    delay(2000); 
     if (connectAPRS(aprs_server, aprs_port)) {
-      Serial.println("Okay... sudah berjaya sambung dengan APRS-IS. Standby nak hantar beacon!");
+      Serial.println("Okay... sudah berjaya sambung semula dengan APRS-IS. Standby nak hantar beacon!");
       digitalWrite(wiFiON, HIGH);
+      digitalWrite(scanWiFi, LOW);
+      noTone(buzzer);
+
+        Serial.println("\nWiFi bersambung semula."); 
+        Serial.print("Bersambung ke SSID: ");
+        Serial.println(WiFi.SSID());              // Tunjukkan SSID mana yang berjaya disambung
+        Serial.print("Alamat IP: ");              // Tunjuk IP address
+        Serial.println(WiFi.localIP()); 
     }
+  }
+
+  } else {
+    // Jika WiFi terputus, kita cuba sambung semula guna wifiMulti.run()
+    Serial.println("WiFi terputus. Mencuba sambung semula rangkaian...");
+    digitalWrite(wiFiON, LOW);
+    digitalWrite(scanWiFi, HIGH);       // Beri isyarat LED sedang scan
+    delay(100);                         // Bagi dia berkelip sikit
+    digitalWrite(scanWiFi, LOW);        // Bagi dia berkelip sikit
+    delay(1000);                        // Tunggu sebentar sebelum cuba lagi
+    return;                             // Langkau logik beacon buat sementara waktu
   }
 
   // --- SmartBeaconing ---
@@ -242,9 +301,9 @@ void loop() {
           digitalWrite(TXBeacon, HIGH);
           delay(200);
           digitalWrite(TXBeacon, LOW);
-          tone(buzzer, 1100); 
-          delay(50);
+          tone(buzzer, toneKoner); 
           digitalWrite(TXBeacon, HIGH);
+          delay(50);
           noTone(buzzer);
           delay(200);
           digitalWrite(TXBeacon, LOW);
