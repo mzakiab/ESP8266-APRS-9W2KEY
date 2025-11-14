@@ -4,18 +4,17 @@
 *************************************************/
 
 #include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>           // Kutub kanah untuk multiple WiFi
+#include <ESP8266WiFiMulti.h>           // Kutukanah untuk multiple WiFi
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <WiFiClient.h>
 
 // --- Konfigurasi WiFi ---
-// Menggunakan WiFiMulti untuk menguruskan berbilang rangkaian
-ESP8266WiFiMulti wifiMulti; 
+ESP8266WiFiMulti wifiMulti;             // untuk handle multiple wifi network
 
 // --- Konfigurasi APRS ---
-const char* callsign = "xxxxxxxxx";           // Ganti dengan callsign Anda
-const char* passcode = "xxxxx";               // Ganti dengan passcode APRS-IS Anda
+const char* callsign = "9W2KEY-12";           // Ganti dengan callsign Anda
+const char* passcode = "15783";               // Ganti dengan passcode APRS-IS Anda
 const char* aprs_server = "asia.aprs2.net";   // Server APRS-IS 
 const uint16_t aprs_port = 14580;             // Port untuk APRS
 
@@ -34,11 +33,11 @@ TinyGPSPlus gps;
 SoftwareSerial ss(RXPin, TXPin);              // RX, TX
 
 // --- Konfigurasi LED ---
-//const int scanGPS  =  1;  // LED 
-//const int adaGPS   =  2;  // LED 
-const int scanWiFi =   15;  // LED Kuning - D8
-const int wiFiON   =   13;  // LED Hijau - D7
-const int TXBeacon =    2;  // LED Merah - D4
+//const int scanGPS  =  1;      // LED 
+//const int adaGPS   =  2;      // LED 
+const int scanWiFi =   15;      // LED Kuning - D8
+const int wiFiON   =   13;      // LED Hijau - D7
+const int TXBeacon =    2;      // LED Merah - D4
 
 // ---- Konfigurasi Buzzer ----
 int buzzer          =    0;     // Pin untuk buzzer D3
@@ -46,10 +45,14 @@ int toneTX          =   4000;   // Tone TX
 int toneKoner       =   3000;   // Tone Koner Leper
 int toneISerr       =   50;     // Tone server terputus
 
+// ---- Konfigurasi Butang TX Beacon Manual ----
+#define BUTTON_PIN      4       // Pin D2
+volatile boolean txRequest = false; // Menandakan permintaan TX manual beacon
+
 // --- Pengaturan Waktu Beacon SmartBeaconing ---
 const unsigned long BEACON_FAST_INTERVAL = 8000;      // 8 saat (ketika bergerak)
 const unsigned long BEACON_SLOW_INTERVAL = 1800000;   // 30 minit (ketika tidak bergerak)
-// const unsigned long BEACON_SLOW_INTERVAL = 10000;  // 10 saat, untuk testing system 
+// const unsigned long BEACON_SLOW_INTERVAL = 15000;     // 15 saat, untuk testing system 
 const float LOW_SPEED_THRESHOLD_KNOTS = 3.0;          // Di bawah nilai ini dianggap "tidak bergerak"
 const float TURN_ANGLE_THRESHOLD_DEG = 25.0;          // Sudut konar leper minimum untuk triger beacon (25 darjah)
 
@@ -71,7 +74,7 @@ bool connectAPRS(const char* server, uint16_t port) {
     loginStr += callsign; 
     loginStr += " pass ";
     loginStr += passcode; 
-    loginStr += " vers 9W2KEY-ESP8266_APRS 2.0\r\n";
+    loginStr += " vers 9W2KEY-ESP8266_APRS v2.2\r\n";
     tcpClient.print(loginStr); 
     aprsConnected = true; 
     return true;
@@ -90,7 +93,7 @@ bool sendAPRSMessage(const char* message) {
   return false;
 }
 
-void sendAPRSBeacon() {
+void sendAPRSBeacon(const char* comment) {
   // Format paket APRS: 9W2KEY-12>APKEY3,TCPIP*:@ddmmyyhhmmzLat Long SSS/CRS Comment
   
   // char buffer[100];
@@ -122,7 +125,8 @@ void sendAPRSBeacon() {
   // Format: !DDMM.mmN\DDDMM.mmOCCC/SSSKomen.
   // tukar askara di tengah %sO%0 untuk tukar simbol.
   // Askara O dlm tu adalah untuk simbol Roket. 
-  sprintf(buffer, "!%s\\%sO%03d/%03d/A=%06d Experiment GPS + ESP8266 APRS | 9w2key.blogspot.com |", lat_buf, lon_buf, course_deg, speed_knots, altitude_meters);
+  // sprintf(buffer, "!%s\\%sO%03d/%03d/A=%06d Experiment GPS + ESP8266 APRS | 9w2key.blogspot.com |", lat_buf, lon_buf, course_deg, speed_knots, altitude_meters);
+  sprintf(buffer, "!%s\\%sO%03d/%03d/A=%06d %s", lat_buf, lon_buf, course_deg, speed_knots, altitude_meters, comment);
 
   Serial.print("Menghantar beacon APRS: "); 
   Serial.println(buffer); 
@@ -142,6 +146,14 @@ void sendAPRSBeacon() {
   } else {
     Serial.println("Gagal menghantar beacon."); 
   }
+}
+
+// =========================================================================
+//                 Interrupt Service Routine (ISR)
+// =========================================================================
+// ISR untuk mengendalikan penekanan butang
+void IRAM_ATTR handleButtonPress() {
+  txRequest = true;     // Tetapkan flag permintaan TX
 }
 
 // =========================================================================
@@ -165,10 +177,10 @@ void setup() {
 
   // --- Konfigurasi WiFiMulti ---
   WiFi.mode(WIFI_STA);                                          // Tetapkan mod kepada Station
-  wifiMulti.addAP("wifi1_SSID", "wifi1_Password");              // Hok spok talipong 1
-  wifiMulti.addAP("wifi2_SSID", "wifi2_Password");              // Wifi rumah 1
-  wifiMulti.addAP("wifi3_SSID", "wifi3_Password");              // Wifi rumah 2
-  wifiMulti.addAP("wifi4_SSID", "wifi4_Password");              // Hok spok talipong 2
+  wifiMulti.addAP("ABEKEY", "ingatfreeko");                     // Hok spok talipong 1
+  wifiMulti.addAP("nokpasswordwifiko@unifi", "ingatfreeko");    // Wifi rumah 1
+  wifiMulti.addAP("nokgapotuu_2.4GHz@unifi", "ingatfreeko");    // Wifi rumah 2
+  wifiMulti.addAP("9W2KEY-VIVO", "ingatfreeko");                // Hok spok talipong 2
   // Tambah lagi rangkaian lain di bawah ni jika ada:
   // wifiMulti.addAP("SSID BARU", "PASSWORD BARU");             // Tambah Rangkaian 5
 
@@ -200,6 +212,12 @@ void setup() {
     Serial.println("Gagal terhubung ke APRS-IS."); 
   }
 
+// --- Setup untuk butang TX Beacon ---
+// Tambah kod ini untuk butang tekan
+pinMode(BUTTON_PIN, INPUT_PULLUP); // Tetapkan pin butang sebagai input dengan pull-up dalaman
+// Lampirkan interrupt: Apabila butang ditekan (FALLING edge), panggil fungsi handleButtonPress
+attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonPress, FALLING);
+
 }
 
 // =========================================================================
@@ -214,13 +232,16 @@ void loop() {
     }
   }
 
+const char* stationary_comment = "Experiment ESP8266 APRS: Parking mode | 9w2key.blogspot.com |";   // Tak gerak hantar koment ini
+const char* moving_comment =     "Experiment ESP8266 APRS: Mobile mode | 9w2key.blogspot.com |";    // Bergerak hantar hok ni
+const char* tekanButang =        "ESP8266 APRS: == ACTIVE == | 9w2key.blogspot.com |";              // Komen ni bila tekan butang TX
+
   // --- Pengurusan Sambungan WiFi dan APRS-IS (Penting) ---
   // Fungsi wifiMulti.run() perlu sentiasa dipanggil dalam loop()
   // untuk memastikan ia menguruskan sambungan semula WiFi secara automatik.
   if (wifiMulti.run() == WL_CONNECTED) {
     digitalWrite(wiFiON, HIGH);
     digitalWrite(scanWiFi, LOW);
-
 
   // Untuk make sure konet seng ke APRS-IS tidak putus.
   // Kalu putus, dia akan try cuba sambung lagi dan lagi sampai mung tutup
@@ -316,10 +337,27 @@ void loop() {
     
     // 3. TX Beacon jika terpaksa atau interval sudah cukup masa
     if (forceBeacon || (millis() - lastBeaconTime >= currentInterval)) {
-      sendAPRSBeacon();
+      if (currentSpeedKnots <= LOW_SPEED_THRESHOLD_KNOTS) {
+        sendAPRSBeacon(stationary_comment);
+      } else {
+      sendAPRSBeacon(moving_comment); 
+      }
       lastBeaconTime = millis(); 
     }
   } else {
     Serial.println("Menunggu isyarat dari GPS ...");
         }
+
+// Tambah kod ini untuk semak permintaan butang
+if (txRequest) {
+    Serial.println("Permintaan TX manual dikesan. Menghantar beacon APRS...");
+    digitalWrite(TXBeacon, HIGH);
+    tone(buzzer, toneISerr);
+    sendAPRSBeacon(tekanButang);   // Panggil fungsi penghantaran beacon sedia ada
+    delay(2000);
+    noTone(buzzer);
+    digitalWrite(TXBeacon, LOW);
+    txRequest = false;  // Tetapkan semula bendera selepas penghantaran
+   }
+
 }
