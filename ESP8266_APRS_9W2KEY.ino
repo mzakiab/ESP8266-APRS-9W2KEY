@@ -13,8 +13,8 @@
 ESP8266WiFiMulti wifiMulti;             // untuk handle multiple wifi network
 
 // --- Konfigurasi APRS ---
-const char* callsign = "9W2KEY-12";           // Ganti dengan callsign Anda
-const char* passcode = "15783";               // Ganti dengan passcode APRS-IS Anda
+const char* callsign = "xxxxxxxxx";           // Ganti dengan callsign Anda
+const char* passcode = "xxxxx";               // Ganti dengan passcode APRS-IS Anda
 const char* aprs_server = "asia.aprs2.net";   // Server APRS-IS 
 const uint16_t aprs_port = 14580;             // Port untuk APRS
 
@@ -177,10 +177,10 @@ void setup() {
 
   // --- Konfigurasi WiFiMulti ---
   WiFi.mode(WIFI_STA);                                          // Tetapkan mod kepada Station
-  wifiMulti.addAP("ABEKEY", "ingatfreeko");                     // Hok spok talipong 1
-  wifiMulti.addAP("nokpasswordwifiko@unifi", "ingatfreeko");    // Wifi rumah 1
-  wifiMulti.addAP("nokgapotuu_2.4GHz@unifi", "ingatfreeko");    // Wifi rumah 2
-  wifiMulti.addAP("9W2KEY-VIVO", "ingatfreeko");                // Hok spok talipong 2
+  wifiMulti.addAP("wifi1_SSID", "wifi1_Password");              // Hok spok talipong 1
+  wifiMulti.addAP("wifi2_SSID", "wifi2_Password");              // Wifi rumah 1
+  wifiMulti.addAP("wifi3_SSID", "wifi3_Password");              // Wifi rumah 2
+  wifiMulti.addAP("wifi4_SSID", "wifi4_Password");              // Hok spok talipong 2
   // Tambah lagi rangkaian lain di bawah ni jika ada:
   // wifiMulti.addAP("SSID BARU", "PASSWORD BARU");             // Tambah Rangkaian 5
 
