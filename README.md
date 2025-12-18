@@ -15,7 +15,7 @@ Antara bahan-bahan yang diperlukan adalah:-
 
 Cara sambung / Litar:
 <p>
-<img src = "Screenshot from 2025-11-09 12-13-24.png">
+<img src = "Screenshot from 2025-12-17 09-12-20.png">
 </p>
 <p>
   Contoh selepas sambung-sambung
